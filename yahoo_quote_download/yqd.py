@@ -9,10 +9,10 @@ Created on Thu May 18 22:58:12 2017
 from __future__ import print_function
 
 # Use six to import urllib so it is working for Python2/3
-from six.moves import urllib
+#from six.moves import urllib
 # If you don't want to use six, please comment out the line above
 # and use the line below instead (for Python3 only).
-#import urllib.request, urllib.parse, urllib.error
+import urllib.request, urllib.parse, urllib.error
 
 import time
 import pandas as pd
@@ -48,28 +48,34 @@ def _get_cookie_crumb():
 
 	# Perform a Yahoo financial lookup on SP500
 	req = urllib.request.Request('https://finance.yahoo.com/quote/^GSPC', headers=_headers)
-	f = urllib.request.urlopen(req)
-	alines = f.read().decode('utf-8')
+	try:
+                f = urllib.request.urlopen(req)
+                alines = f.read().decode('utf-8')
+                # Extract the crumb from the response
+                global _crumb
+                cs = alines.find('CrumbStore')
+                cr = alines.find('crumb', cs + 10)
+                cl = alines.find(':', cr + 5)
+                q1 = alines.find('"', cl + 1)
+                q2 = alines.find('"', q1 + 1)
+                crumb = alines[q1 + 1:q2]
+                _crumb = crumb
 
-	# Extract the crumb from the response
-	global _crumb
-	cs = alines.find('CrumbStore')
-	cr = alines.find('crumb', cs + 10)
-	cl = alines.find(':', cr + 5)
-	q1 = alines.find('"', cl + 1)
-	q2 = alines.find('"', q1 + 1)
-	crumb = alines[q1 + 1:q2]
-	_crumb = crumb
-
-	# Extract the cookie from cookiejar
-	global cookier, _cookie
-	for c in cookier.cookiejar:
-		if c.domain != '.yahoo.com':
-			continue
-		if c.name != 'B':
-			continue
-		_cookie = c.value
-
+                # Extract the cookie from cookiejar
+                global cookier, _cookie
+                for c in cookier.cookiejar:
+                        if c.domain != '.yahoo.com':
+                                continue
+                        if c.name != 'B':
+                                continue
+                        _cookie = c.value
+	except urllib.error.URLError as e:
+                print(e.reason)
+                pass
+	#finally:
+         #       print(req.)
+       # else:
+       #         return
 	# Print the cookie and crumb
 	#print('Cookie:', _cookie)
 	#print('Crumb:', _crumb)
@@ -102,17 +108,22 @@ def load_yahoo_quote(ticker, begindate, enddate, info = 'quote', format_output =
 	url = 'https://query1.finance.yahoo.com/v7/finance/download/{}?{}'.format(ticker, params)
 	#print(url)
 	req = urllib.request.Request(url, headers=_headers)
-
 	# Perform the query
 	# There is no need to enter the cookie here, as it is automatically handled by opener
-	f = urllib.request.urlopen(req)
-	alines = f.read().decode('utf-8')
-	#print(alines)
-	if format_output == 'list':
-		return alines.split('\n')
+	try:
+                f = urllib.request.urlopen(req)
+                alines = f.read().decode('utf-8')
+                #print(alines)
+                if format_output == 'list':
+                        return alines.split('\n')
+        
+                if format_output == 'dataframe':
+                        nested_alines = [line.split(',') for line in alines.split('\n')[1:]]
+                        cols = alines.split('\n')[0].split(',')
+                        adf = pd.DataFrame.from_records(nested_alines[:-1], columns=cols)
+                        return adf
 
-	if format_output == 'dataframe':
-		nested_alines = [line.split(',') for line in alines.split('\n')[1:]]
-		cols = alines.split('\n')[0].split(',')
-		adf = pd.DataFrame.from_records(nested_alines[:-1], columns=cols)
-		return adf
+	except urllib.error.URLError as e:
+                print(e.reason)
+                pass
+        
