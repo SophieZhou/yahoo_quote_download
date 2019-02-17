@@ -5,7 +5,7 @@
 
 
 
-The initial readme........
+The initial readme as belows........
 # yahoo_quote_download
 
 Starting on May 2017, Yahoo financial has terminated its service on the well used EOD data download without warning. This is confirmed by Yahoo employee in forum posts.
