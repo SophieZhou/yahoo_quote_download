@@ -1,3 +1,11 @@
+1. update the test file to ouput the results to different files.
+2. Use of symbols file to craw many companies in one program.
+3. use "try cache error" to deal with some SYMBOL that can not download data anymore.
+20190217
+
+
+
+The initial readme........
 # yahoo_quote_download
 
 Starting on May 2017, Yahoo financial has terminated its service on the well used EOD data download without warning. This is confirmed by Yahoo employee in forum posts.
